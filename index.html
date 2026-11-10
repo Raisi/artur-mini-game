@@ -36,7 +36,7 @@
 
       /* Kurze Meldungen, z. B. "Figur geladen!" */
       #meldung {
-        position: fixed; top: 16px; right: 16px;
+        position: fixed; top: 16px; right: 16px; z-index: 10; /* immer über dem Titel */
         background: rgba(30, 40, 90, 0.55);
         padding: 8px 14px; border-radius: 12px; font-size: 15px;
         opacity: 0; transition: opacity 0.4s; pointer-events: none;
@@ -46,7 +46,7 @@
 
       /* Rahmen, der beim Darüberziehen einer Datei erscheint */
       #drop-hinweis {
-        position: fixed; inset: 12px;
+        position: fixed; inset: 12px; z-index: 10;
         border: 6px dashed #fff; border-radius: 24px;
         background: rgba(255, 255, 255, 0.2);
         display: none; align-items: center; justify-content: center;
@@ -72,17 +72,54 @@
       }
       .gewonnen-karte h1 { margin: 0 0 8px; font-size: 48px; color: #f29f05; }
       .gewonnen-karte p { font-size: 20px; margin: 0 0 20px; }
-      #neustart {
+      /* Knöpfe: grün = Hauptaktion, weiß = Nebenaktion */
+      .knopf {
         font: inherit; font-size: 20px; font-weight: bold;
         background: #3ec46d; color: #fff;
         border: none; border-radius: 14px; padding: 12px 28px;
         box-shadow: 0 5px 0 #2a8f4e; cursor: pointer;
       }
-      #neustart:hover { background: #46d67a; }
-      #neustart:active { transform: translateY(3px); box-shadow: 0 2px 0 #2a8f4e; }
+      .knopf:hover { background: #46d67a; }
+      .knopf:active { transform: translateY(3px); box-shadow: 0 2px 0 #2a8f4e; }
+      .knopf.neben { background: #fff; color: #2a2f5a; box-shadow: 0 5px 0 #b8c0e0; font-size: 17px; }
+      .knopf.neben:hover { background: #f1f4ff; }
+      .knopf.neben:active { box-shadow: 0 2px 0 #b8c0e0; }
+      .knopf-reihe { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+      /* Titelbildschirm ("Duell"): Titel oben, Menü unten, dazwischen siehst du die Figuren */
+      #titel {
+        position: fixed; inset: 0;
+        display: none; flex-direction: column; align-items: center; justify-content: space-between;
+        padding: 6vh 16px 7vh;
+        pointer-events: none; /* Klicks gehen durch – außer auf die Knöpfe */
+      }
+      #titel.sichtbar { display: flex; }
+      #titel h1 {
+        margin: 0; font-size: clamp(48px, 11vw, 120px); line-height: 1;
+        color: #ffd23f; letter-spacing: 2px;
+        /* dicker dunkler Rand um die Buchstaben, wie bei einem Spiele-Logo */
+        text-shadow: 0 4px 0 #b07800, 3px 3px 0 #2a2f5a, -3px 3px 0 #2a2f5a,
+                     3px -3px 0 #2a2f5a, -3px -3px 0 #2a2f5a, 0 10px 18px rgba(0, 0, 0, 0.25);
+      }
+      #titel .untertitel {
+        margin: 10px 0 0; font-size: clamp(15px, 2.4vw, 22px); font-weight: bold; text-align: center;
+        text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+      }
+      #titel .vs {
+        font-size: clamp(28px, 5vw, 48px); font-weight: bold; color: #fff;
+        text-shadow: 0 3px 0 #e63946, 0 0 12px rgba(230, 57, 70, 0.6);
+      }
+      #titel .menue { display: flex; flex-direction: column; align-items: center; gap: 14px; pointer-events: auto; }
+      #titel .menue .knopf { min-width: 240px; }
+      #titel .bald {
+        font-size: 12px; background: #ffd23f; color: #6b4a00;
+        border-radius: 8px; padding: 2px 6px; margin-left: 6px; vertical-align: 2px;
+      }
+      #titel .tipp { font-size: 14px; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4); }
+      body.im-titel #hud, body.im-titel #hilfe { display: none; }
     </style>
   </head>
-  <body>
+  <body class="im-titel">
     <div id="hud">
       <div class="hud-box">🪙 <span id="muenzen">0 / 20</span></div>
       <div class="hud-box">⏱️ <span id="zeit">0.0 s</span></div>
@@ -97,7 +134,10 @@
       <div class="gewonnen-karte">
         <h1>Gewonnen!</h1>
         <p>Alle Münzen in <strong id="endzeit">0.0</strong> Sekunden gesammelt.</p>
-        <button id="neustart">Nochmal spielen</button>
+        <div class="knopf-reihe">
+          <button id="neustart" class="knopf">Nochmal spielen</button>
+          <button class="knopf neben zum-titel">Hauptmenü</button>
+        </div>
       </div>
     </div>
 
@@ -105,7 +145,24 @@
       <div class="gewonnen-karte game-over-karte">
         <h1>Game Over</h1>
         <p>Die Gegner haben dich erwischt! Weich ihnen aus oder spring drüber.</p>
-        <button id="neustart-game-over">Nochmal versuchen</button>
+        <div class="knopf-reihe">
+          <button id="neustart-game-over" class="knopf">Nochmal versuchen</button>
+          <button class="knopf neben zum-titel">Hauptmenü</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Titelbildschirm: Deine Figur und ein Gegner stehen sich gegenüber -->
+    <div id="titel" class="sichtbar">
+      <div>
+        <h1>Münzjagd</h1>
+        <p class="untertitel">Sammle die Münzen – und lass dich nicht erwischen!</p>
+      </div>
+      <div class="vs">VS</div>
+      <div class="menue">
+        <button id="titel-start" class="knopf">Neues Spiel</button>
+        <button id="titel-highscores" class="knopf neben">Highscores<span class="bald">bald</span></button>
+        <div class="tipp">Enter drücken geht auch</div>
       </div>
     </div>
 

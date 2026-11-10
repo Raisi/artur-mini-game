@@ -5,6 +5,7 @@ import { Spieler } from './player.js';
 import { Spiel } from './game.js';
 import { ladeGegnerVorlage, erstelleGegnerPlatzhalter } from './enemy.js';
 import { ladeSchwertVorlage, erstelleSchwertPlatzhalter } from './sword.js';
+import { Titelbild } from './title.js';
 
 // ── Renderer: zeichnet die 3D-Szene in ein <canvas> ──
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -35,6 +36,13 @@ function zeigeMeldung(text) {
   clearTimeout(meldungTimer);
   meldungTimer = setTimeout(() => meldung.classList.remove('sichtbar'), 3500);
 }
+
+// ── Titelbildschirm: Das Spiel beginnt im Menü ──
+const titel = new Titelbild(spiel, spieler, zeigeMeldung);
+titel.passeAn(window.innerWidth / window.innerHeight);
+titel.zeigen();
+kamera.position.copy(titel.kameraPosition); // gleich richtig hinschauen, ohne Anflug
+kameraZiel.copy(titel.kameraBlick);
 
 // Figur laden – klappt das nicht, kommt die bunte Kapsel.
 // import.meta.env.BASE_URL sorgt dafür, dass der Pfad auch nach "npm run build" stimmt.
@@ -84,7 +92,8 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
 });
 
 function leseEingabe() {
-  const aktiv = !spiel.vorbei; // nach Sieg oder Game Over steht die Figur still
+  // Im Titelbildschirm und nach Sieg oder Game Over steht die Figur still
+  const aktiv = !spiel.vorbei && !titel.aktiv;
   const klick = klickAngriff;
   klickAngriff = false; // ein Klick = ein Hieb
   return {
@@ -135,6 +144,7 @@ window.addEventListener('drop', async (e) => {
 window.addEventListener('resize', () => {
   kamera.aspect = window.innerWidth / window.innerHeight;
   kamera.updateProjectionMatrix();
+  titel.passeAn(kamera.aspect);
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
@@ -149,13 +159,17 @@ function schleife(zeitstempel) {
 
   const eingabe = leseEingabe();
   spieler.aktualisiere(dt, eingabe, welt.hindernisse, welt.inselRadius);
-  spiel.aktualisiere(dt, eingabe);
+  if (titel.aktiv) titel.aktualisiere(dt);
+  else spiel.aktualisiere(dt, eingabe);
 
-  // Kamera folgt sanft (lerp): jedes Bild ein Stück näher ans Ziel
+  // Kamera gleitet sanft (lerp) zu ihrem Ziel: im Titel aufs Duell, im Spiel hinter die Figur.
+  // Beim Start von "Neues Spiel" fliegt sie so ganz von selbst hinüber.
   const glaette = 1 - Math.exp(-5 * dt);
   const figurPos = spieler.gruppe.position;
-  kamera.position.lerp(figurPos.clone().add(KAMERA_ABSTAND), glaette);
-  kameraZiel.lerp(figurPos.clone().add(new THREE.Vector3(0, 1, 0)), glaette);
+  const zielPosition = titel.aktiv ? titel.kameraPosition : figurPos.clone().add(KAMERA_ABSTAND);
+  const zielBlick = titel.aktiv ? titel.kameraBlick : figurPos.clone().add(new THREE.Vector3(0, 1, 0));
+  kamera.position.lerp(zielPosition, glaette);
+  kameraZiel.lerp(zielBlick, glaette);
   kamera.lookAt(kameraZiel);
 
   renderer.render(scene, kamera);
@@ -165,3 +179,4 @@ renderer.setAnimationLoop(schleife);
 // Für Neugierige: in der Browser-Konsole kann man z. B. "spiel.neustart()" eintippen.
 window.spiel = spiel;
 window.spieler = spieler;
+window.titel = titel;
