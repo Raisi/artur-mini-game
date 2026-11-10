@@ -6,3 +6,4 @@
 - alle 5 Level - Bossgegner
 - Hintergrundmusik
 - Title Screen
+- High Score
