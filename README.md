@@ -4,6 +4,8 @@ Ein kleines 3D-Spiel im Browser: Du läufst mit **deiner eigenen Figur aus Paint
 über eine Insel und sammelst 20 Münzen so schnell wie möglich ein – ohne dich von den
 Gegnern erwischen zu lassen. Zum Glück hast du ein Schwert! ⚔️
 
+**▶️ Online spielen: https://raisi.github.io/artur-mini-game/**
+
 ## So startest du das Spiel
 
 Du brauchst [Node.js](https://nodejs.org) (am besten die aktuelle LTS-Version, mindestens 22.12).
@@ -132,6 +134,21 @@ Deine Figur hält es automatisch in der rechten Hand (wenn sie eigene Arme hat �
 neben ihr). Gibt es keine `sword.glb`, bekommt sie ein einfaches Ersatz-Schwert.
 Länge, Griff-Position und Haltung stellst du in `src/sword.js` im Block `SCHWERT_EINSTELLUNGEN` ein.
 Hast du das Schwert andersherum gebaut (Klinge unten), setze dort `umdrehen: true`.
+
+## Veröffentlichen (GitHub Pages)
+
+Das Spiel wird automatisch veröffentlicht: Sobald Änderungen auf den Branch `main` gepusht
+werden, baut GitHub das Spiel und stellt es unter
+https://raisi.github.io/artur-mini-game/ online – nach etwa einer Minute ist die neue Version da.
+
+- Den Fortschritt siehst du auf GitHub im Tab **Actions** (Workflow „Deploy auf GitHub Pages“).
+  Dort kannst du ihn mit **Run workflow** auch von Hand starten.
+- Die Einstellungen dafür stehen in `.github/workflows/deploy.yml`.
+- Weil das Spiel online im Unterordner `/artur-mini-game/` liegt, setzt `vite.config.js` diesen
+  Pfad beim Bauen. Lokal mit `npm run dev` ändert sich nichts.
+
+Neue Figuren, Gegner oder Schwerter? Einfach die `.glb`-Datei in `public/models/` austauschen,
+committen und pushen – fertig.
 
 ## Was steckt wo?
 
