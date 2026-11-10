@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Leeres Icon, damit der Browser kein favicon.ico sucht (sonst 404 in der Konsole) -->
+    <link rel="icon" href="data:," />
+    <title>Münzjagd</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #8fd3ff; }
+      body { font-family: "Trebuchet MS", "Segoe UI", sans-serif; color: #fff; }
+      canvas { display: block; }
+
+      /* HUD oben links: Münzen und Zeit */
+      #hud {
+        position: fixed; top: 16px; left: 16px;
+        display: flex; gap: 12px;
+        pointer-events: none;
+      }
+      .hud-box {
+        background: rgba(30, 40, 90, 0.55);
+        padding: 8px 16px; border-radius: 14px;
+        font-size: 22px; font-weight: bold;
+        text-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+      }
+
+      /* Kleine Hilfe unten */
+      #hilfe {
+        position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+        background: rgba(30, 40, 90, 0.45);
+        padding: 6px 14px; border-radius: 10px;
+        font-size: 14px; text-align: center; pointer-events: none;
+        max-width: calc(100% - 32px);
+      }
+
+      /* Kurze Meldungen, z. B. "Figur geladen!" */
+      #meldung {
+        position: fixed; top: 16px; right: 16px;
+        background: rgba(30, 40, 90, 0.55);
+        padding: 8px 14px; border-radius: 12px; font-size: 15px;
+        opacity: 0; transition: opacity 0.4s; pointer-events: none;
+        max-width: calc(100% - 32px);
+      }
+      #meldung.sichtbar { opacity: 1; }
+
+      /* Rahmen, der beim Darüberziehen einer Datei erscheint */
+      #drop-hinweis {
+        position: fixed; inset: 12px;
+        border: 6px dashed #fff; border-radius: 24px;
+        background: rgba(255, 255, 255, 0.2);
+        display: none; align-items: center; justify-content: center;
+        font-size: 32px; font-weight: bold; text-align: center;
+        pointer-events: none;
+      }
+      #drop-hinweis.sichtbar { display: flex; }
+
+      /* "Gewonnen!"- und "Game Over"-Bildschirm */
+      #gewonnen, #game-over {
+        position: fixed; inset: 0;
+        background: rgba(20, 30, 70, 0.6);
+        display: none; align-items: center; justify-content: center;
+      }
+      #gewonnen.sichtbar, #game-over.sichtbar { display: flex; }
+      .game-over-karte { box-shadow: 0 10px 0 #e63946; }
+      .game-over-karte h1 { color: #e63946; }
+      .gewonnen-karte {
+        background: #fff; color: #2a2f5a;
+        padding: 32px 40px; border-radius: 24px; text-align: center;
+        box-shadow: 0 10px 0 #f2b705;
+        margin: 16px;
+      }
+      .gewonnen-karte h1 { margin: 0 0 8px; font-size: 48px; color: #f29f05; }
+      .gewonnen-karte p { font-size: 20px; margin: 0 0 20px; }
+      #neustart {
+        font: inherit; font-size: 20px; font-weight: bold;
+        background: #3ec46d; color: #fff;
+        border: none; border-radius: 14px; padding: 12px 28px;
+        box-shadow: 0 5px 0 #2a8f4e; cursor: pointer;
+      }
+      #neustart:hover { background: #46d67a; }
+      #neustart:active { transform: translateY(3px); box-shadow: 0 2px 0 #2a8f4e; }
+    </style>
+  </head>
+  <body>
+    <div id="hud">
+      <div class="hud-box">🪙 <span id="muenzen">0 / 20</span></div>
+      <div class="hud-box">⏱️ <span id="zeit">0.0 s</span></div>
+      <div class="hud-box"><span id="leben">❤️❤️❤️</span></div>
+    </div>
+
+    <div id="hilfe">WASD / Pfeiltasten: laufen · Leertaste: springen · F / Klick: Schwert · .glb-Datei ins Fenster ziehen: neue Figur</div>
+    <div id="meldung"></div>
+    <div id="drop-hinweis">Lass los – deine Figur kommt ins Spiel! 🎉</div>
+
+    <div id="gewonnen">
+      <div class="gewonnen-karte">
+        <h1>Gewonnen!</h1>
+        <p>Alle Münzen in <strong id="endzeit">0.0</strong> Sekunden gesammelt.</p>
+        <button id="neustart">Nochmal spielen</button>
+      </div>
+    </div>
+
+    <div id="game-over">
+      <div class="gewonnen-karte game-over-karte">
+        <h1>Game Over</h1>
+        <p>Die Gegner haben dich erwischt! Weich ihnen aus oder spring drüber.</p>
+        <button id="neustart-game-over">Nochmal versuchen</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
