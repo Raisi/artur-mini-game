@@ -24,6 +24,15 @@ npm run dev
 
 Im Terminal erscheint eine Adresse wie `http://localhost:5173`. Öffne sie im Browser – fertig!
 
+## Titelbildschirm
+
+Das Spiel startet im Hauptmenü: Deine Figur und ein Gegner stehen sich gegenüber – ab und zu
+holt deine Figur mit dem Schwert aus. Mit **Neues Spiel** (oder **Enter**) geht's los.
+**Highscores** ist schon da, kommt aber erst später. Nach „Gewonnen!“ oder „Game Over“ bringt
+dich **Hauptmenü** zurück.
+
+Wo die beiden stehen und von wo die Kamera schaut, steht oben in `src/title.js`.
+
 ## Steuerung
 
 | Taste                | Was passiert        |
@@ -156,6 +165,7 @@ committen und pushen – fertig.
 | ---------------- | --------------------------------------------------------- |
 | `index.html`     | Die Webseite mit Anzeige (Münzen, Zeit, Herzen, "Gewonnen!", "Game Over") |
 | `src/main.js`    | Start: Kamera, Tastatur, Drag & Drop, Spielschleife       |
+| `src/title.js`   | Titelbildschirm („Duell“): Figuren in Pose, Menü, Kamera  |
 | `src/world.js`   | Die Insel: Himmel, Licht, Bäume, Kisten, Felsen           |
 | `src/figur.js`   | Werkzeuge für Spieler und Gegner: Modell anpassen, Arme/Beine finden, Kollision |
 | `src/player.js`  | Deine Figur: Laden, Laufen, Springen, Wippen, Squash & Stretch, Schwerthieb |
