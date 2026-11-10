@@ -5,3 +5,4 @@ dist
 # Lokale Werkzeug-Ordner (gehören nicht ins Repository)
 .claude/
 .remember/
+.omc/
