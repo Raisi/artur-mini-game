@@ -7,3 +7,4 @@
 - Hintergrundmusik
 - Title Screen
 - High Score
+- Texturen
