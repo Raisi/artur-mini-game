@@ -192,6 +192,25 @@ wiederholt sich, darum sollten alle vier Ränder zusammenpassen:
 public/textures/fels.png
 ```
 
+## Boden
+
+Die Insel ist oben eine Wiese mit **Erdflecken**: Grashalme in vielen Grüntönen, hellere und
+dunklere Stellen und etwa ein Dutzend brauner Flecken mit Krümeln und Steinchen. Das Bild wird
+beim Start einmal groß gemalt (`maleGrasBoden` in `src/world.js`) und liegt wie ein runder
+Teppich auf der Insel – es wiederholt sich nicht, und die Erdflecken liegen bei jedem Start an
+anderen Stellen. Am Inselrand sieht man unter dem Gras die **Erde** mit Schichten und
+Steinchen (`maleErdRand`).
+
+Eigene Texturen legst du hier ab:
+
+```
+public/textures/boden.png   ← die ganze Inseloberfläche (quadratisch, die Bildmitte ist die Inselmitte)
+public/textures/erde.png    ← der Erd-Rand (wiederholt sich rundherum: linker und rechter Rand sollten zusammenpassen)
+```
+
+Beim Erd-Rand ist nur ungefähr das **obere Drittel bis 40 %** des Bildes über dem Wasser zu
+sehen – das Wichtigste also oben hinmalen.
+
 ## Veröffentlichen (GitHub Pages)
 
 Das Spiel wird automatisch veröffentlicht: Sobald Änderungen auf den Branch `main` gepusht

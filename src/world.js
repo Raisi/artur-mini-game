@@ -53,19 +53,214 @@ function erstelleLicht(scene) {
 }
 
 // Die Insel: oben Gras, an der Seite Erde, drumherum Wasser.
+// ───────────────────────────────────────────────────────────────
+// Boden: Gras mit Erdflecken (oben) und Erde (am Inselrand)
+// ───────────────────────────────────────────────────────────────
+
+// Hilfsfunktion: eine unregelmäßige Form ("Klecks") um einen Mittelpunkt als Pfad
+function klecks(ctx, x, y, radius, ecken) {
+  ctx.beginPath();
+  for (let i = 0; i < ecken; i++) {
+    const winkel = (i / ecken) * Math.PI * 2;
+    const r = radius * (0.7 + Math.random() * 0.45); // jede Ecke etwas anders weit weg
+    ctx.lineTo(x + Math.cos(winkel) * r, y + Math.sin(winkel) * r);
+  }
+  ctx.closePath();
+}
+
+// Malt die ganze Inseloberfläche EINMAL als großes Bild (wiederholt sich nicht):
+// Gras mit hellen und dunklen Stellen, dazwischen Erdflecken mit Krümeln und Steinchen.
+// Das Bild liegt wie ein runder Teppich auf der Insel (die Bildmitte = Inselmitte).
+function maleGrasBoden() {
+  const G = 1024;
+  const leinwand = document.createElement('canvas');
+  leinwand.width = G;
+  leinwand.height = G;
+  const ctx = leinwand.getContext('2d');
+
+  // 1. Grundfarbe – dasselbe Grün wie bisher
+  ctx.fillStyle = '#7ed957';
+  ctx.fillRect(0, 0, G, G);
+
+  // 2. Große, weiche Farbflecken: Mal ist das Gras etwas heller, mal etwas dunkler
+  for (let i = 0; i < 70; i++) {
+    const x = Math.random() * G;
+    const y = Math.random() * G;
+    const r = 40 + Math.random() * 90;
+    const verlauf = ctx.createRadialGradient(x, y, 0, x, y, r);
+    const farbe = Math.random() < 0.5 ? '111, 200, 70' : '150, 228, 105';
+    verlauf.addColorStop(0, `rgba(${farbe}, 0.35)`);
+    verlauf.addColorStop(1, `rgba(${farbe}, 0)`);
+    ctx.fillStyle = verlauf;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+
+  // 3. Erdflecken: unregelmäßige braune Kleckse mit Krümeln und kleinen Steinen
+  const flecken = [];
+  for (let i = 0; i < 13; i++) {
+    // irgendwo auf der Insel, aber nicht ganz am Rand
+    const winkel = Math.random() * Math.PI * 2;
+    const abstand = Math.random() * G * 0.4;
+    const x = G / 2 + Math.cos(winkel) * abstand;
+    const y = G / 2 + Math.sin(winkel) * abstand;
+    const r = 18 + Math.random() * 34;
+    flecken.push({ x, y, r });
+
+    ctx.save();
+    klecks(ctx, x, y, r, 12);
+    ctx.fillStyle = '#9c6b43';
+    ctx.fill();
+    ctx.clip(); // Krümel nur innerhalb des Flecks
+    for (let k = 0; k < r * 3; k++) {
+      ctx.fillStyle = Math.random() < 0.5 ? '#7a5232' : '#b8865a';
+      ctx.fillRect(x + (Math.random() - 0.5) * r * 2, y + (Math.random() - 0.5) * r * 2, 2, 2);
+    }
+    for (let s = 0; s < 4; s++) {
+      // Steinchen: grauer Punkt mit hellem Glanzpunkt
+      const sx = x + (Math.random() - 0.5) * r * 1.4;
+      const sy = y + (Math.random() - 0.5) * r * 1.4;
+      ctx.fillStyle = '#8b939c';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 2 + Math.random() * 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#c9cfd6';
+      ctx.fillRect(sx - 1, sy - 1, 1.5, 1.5);
+    }
+    ctx.restore();
+  }
+
+  // 4. Grashalme: viele kurze Striche. Mitten in den Erdflecken wächst keins,
+  //    an deren Rand schon – so verlaufen Gras und Erde natürlich ineinander.
+  const gruentoene = ['#5fbf3f', '#6fcf4a', '#8fe066', '#a6ea7a', '#4fae35'];
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 1.6;
+  for (let i = 0; i < 26000; i++) {
+    const x = Math.random() * G;
+    const y = Math.random() * G;
+    const imFleck = flecken.some((f) => Math.hypot(x - f.x, y - f.y) < f.r * 0.6);
+    if (imFleck) continue;
+    const winkel = Math.random() * Math.PI * 2;
+    const laenge = 3 + Math.random() * 4;
+    ctx.strokeStyle = gruentoene[i % gruentoene.length];
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.cos(winkel) * laenge, y + Math.sin(winkel) * laenge);
+    ctx.stroke();
+  }
+  return leinwand;
+}
+
+// Malt Erde für den Inselrand: waagerechte Schichten, Krümel und Steinchen.
+// Nahtlos nach links/rechts, weil sie sich rund um die Insel wiederholt.
+function maleErdRand() {
+  const B = 256; // Breite
+  const H = 128; // Höhe
+  const leinwand = document.createElement('canvas');
+  leinwand.width = B;
+  leinwand.height = H;
+  const ctx = leinwand.getContext('2d');
+
+  // Schichten von oben (heller, krümelig) nach unten (dunkler, fester).
+  // Über dem Wasser sieht man nur etwa die oberen 40 % des Rands – darum liegen alle
+  // Schichten in diesem Bereich; darunter (unter Wasser) bleibt die dunkelste Farbe.
+  const schichten = ['#b5835a', '#a87750', '#9a6a45', '#8a5d3b', '#7a5133'];
+  ctx.fillStyle = schichten[0]; // erst alles füllen – sonst bliebe über der Welle eine Lücke
+  ctx.fillRect(0, 0, B, H);
+  schichten.forEach((farbe, i) => {
+    if (i === 0) return; // die oberste Schicht ist schon die Grundfarbe
+    ctx.fillStyle = farbe;
+    ctx.beginPath();
+    const y0 = (i / schichten.length) * H * 0.4;
+    ctx.moveTo(0, H);
+    // obere Kante der Schicht leicht wellig – Anfang und Ende gleich hoch (nahtlos)
+    for (let x = 0; x <= B; x += 8) {
+      ctx.lineTo(x, y0 + Math.sin((x / B) * Math.PI * 4 + i) * 3);
+    }
+    ctx.lineTo(B, H);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  // Krümel und Steinchen, nahtlos (am Rand auch auf der anderen Seite malen)
+  for (let i = 0; i < 260; i++) {
+    const x = Math.random() * B;
+    const y = Math.random() * H;
+    const stein = Math.random() < 0.12;
+    const farbe = stein ? '#8b939c' : Math.random() < 0.5 ? '#6b4529' : '#c4946a';
+    const groesse = stein ? 2 + Math.random() * 3 : 1 + Math.random() * 1.5;
+    for (const vx of [-B, 0, B]) {
+      ctx.fillStyle = farbe;
+      ctx.beginPath();
+      ctx.arc(x + vx, y, groesse, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  return leinwand;
+}
+
+function alsBodenTextur(textur) {
+  textur.colorSpace = THREE.SRGBColorSpace;
+  textur.anisotropy = 8; // der Boden wird sehr schräg angeschaut – so bleibt er scharf
+  return textur;
+}
+
+function alsErdTextur(textur) {
+  textur.colorSpace = THREE.SRGBColorSpace;
+  textur.wrapS = THREE.RepeatWrapping;
+  textur.repeat.set(12, 1); // 12x rund um die Insel
+  textur.anisotropy = 4;
+  return textur;
+}
+
+// Liegt eine eigene Datei unter "url", wird sie mit "anwenden" eingesetzt.
+// Fehlt sie, bleibt die gemalte Textur, und es gibt nur einen Hinweis in der Konsole.
+function ladeErsatzTextur(url, anwenden) {
+  new THREE.TextureLoader().load(url, anwenden, undefined, () =>
+    console.info(`Keine eigene Textur unter ${url} – nutze die gemalte.`),
+  );
+}
+
 function erstelleInsel(scene) {
+  // Oben: Gras mit Erdflecken. Ein Zylinder hat drei Teile: Mantel, Deckel oben, Deckel unten.
+  // Nur der obere Deckel bekommt das große Bild, der schmale Mantel bleibt einfach grün.
+  const grasSeite = lowPoly('#7ed957');
+  const grasOben = new THREE.MeshStandardMaterial({
+    map: alsBodenTextur(new THREE.CanvasTexture(maleGrasBoden())),
+    roughness: 0.95,
+  });
   const gras = new THREE.Mesh(
     new THREE.CylinderGeometry(INSEL_RADIUS + 1, INSEL_RADIUS + 1, 0.6, 24),
-    lowPoly('#7ed957'),
+    [grasSeite, grasOben, grasSeite],
   );
   gras.position.y = -0.3; // Oberkante liegt genau bei y = 0
   gras.receiveShadow = true;
   scene.add(gras);
 
+  // Am Rand: Erde mit Schichten
+  const erdMaterial = new THREE.MeshStandardMaterial({
+    map: alsErdTextur(new THREE.CanvasTexture(maleErdRand())),
+    flatShading: true,
+    roughness: 1,
+  });
   const erde = new THREE.Mesh(
-    new THREE.CylinderGeometry(INSEL_RADIUS + 1, INSEL_RADIUS - 3, 4, 24),
-    lowPoly('#b5835a'),
+    // fast senkrecht (unten nur 1 schmaler) – bei einer starken Schräge läge der Rand
+    // "unter" dem Gras und wäre von oben nicht zu sehen
+    new THREE.CylinderGeometry(INSEL_RADIUS + 1, INSEL_RADIUS, 4, 24),
+    erdMaterial,
   );
+
+  // Eigene Texturen? public/textures/boden.png (Inseloberfläche) und erde.png (Rand)
+  const basis = import.meta.env.BASE_URL;
+  ladeErsatzTextur(`${basis}textures/boden.png`, (textur) => {
+    grasOben.map.dispose();
+    grasOben.map = alsBodenTextur(textur);
+    grasOben.needsUpdate = true;
+  });
+  ladeErsatzTextur(`${basis}textures/erde.png`, (textur) => {
+    erdMaterial.map.dispose();
+    erdMaterial.map = alsErdTextur(textur);
+    erdMaterial.needsUpdate = true;
+  });
   erde.position.y = -2.6;
   scene.add(erde);
 
@@ -74,7 +269,7 @@ function erstelleInsel(scene) {
     new THREE.MeshStandardMaterial({ color: '#3fb6e8', roughness: 0.3, transparent: true, opacity: 0.9 }),
   );
   wasser.rotation.x = -Math.PI / 2;
-  wasser.position.y = -1.2;
+  wasser.position.y = -2.2; // so tief, dass man unter dem Gras den Erd-Rand sieht
   scene.add(wasser);
 }
 
