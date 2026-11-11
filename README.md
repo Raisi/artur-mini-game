@@ -9,6 +9,9 @@ Gegnern erwischen zu lassen. Zum Glück hast du ein Schwert! ⚔️
 ## So startest du das Spiel
 
 Du brauchst [Node.js](https://nodejs.org) (am besten die aktuelle LTS-Version, mindestens 22.12).
+Benutzt du [nvm](https://github.com/nvm-sh/nvm), stellt `nvm use` im Projektordner automatisch die
+passende Version ein (steht in `.nvmrc`). Mit einer zu alten Version bricht `npm run dev` mit einem
+`SyntaxError` ab.
 
 Im Projektordner einmalig die Pakete installieren:
 
@@ -113,6 +116,25 @@ hin- und herschwingen. Das klappt, wenn du sie in Paint 3D als **eigene Teile** 
   Teile schwingen nicht mit.
 
 Findet das Spiel nichts Passendes, wippt die Figur einfach nur (wie die Kapsel).
+
+## Nadeln für die Bäume
+
+Die Tannen auf der Insel haben eine Nadel-Textur. Die wird beim Start **im Code gemalt**
+(`maleNadelTextur` in `src/world.js`): viele kurze grüne Striche, die in Reihen schräg nach
+unten hängen – wie Tannenzweige. Die Textur ist nahtlos und wiederholt sich auf jeder Krone
+4x rundherum und 3x nach oben.
+
+**Eigene Textur:** Male ein quadratisches Bild (z. B. 256 × 256 Pixel) – am besten so, dass
+alle vier Ränder zusammenpassen (links zu rechts und oben zu unten, denn die Textur wiederholt
+sich in beide Richtungen) – und speichere es als PNG hier:
+
+```
+public/textures/nadeln.png
+```
+
+Beim nächsten Neuladen tragen alle Bäume deine Textur. Löschst du die Datei, kommen die
+gemalten Nadeln zurück. Wie oft sich die Textur wiederholt, stellst du in `src/world.js` bei
+`textur.repeat.set(4, 3)` ein.
 
 ## Eigene Gegner
 

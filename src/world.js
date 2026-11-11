@@ -78,6 +78,96 @@ function erstelleInsel(scene) {
   scene.add(wasser);
 }
 
+// ───────────────────────────────────────────────────────────────
+// Nadeln für die Baumkronen
+// ───────────────────────────────────────────────────────────────
+
+// Malt eine Nadel-Textur auf eine kleine Leinwand: mehrere Reihen "Zweige",
+// an denen viele kurze Nadeln schräg nach unten hängen – wie bei einer Tanne.
+// Die Textur ist "nahtlos": Was rechts/unten hinausragt, wird links/oben wieder
+// hineingemalt. So sieht man keine Kante, wenn sie sich auf der Krone wiederholt.
+function maleNadelTextur() {
+  const G = 256; // Größe der Leinwand in Pixeln
+  const leinwand = document.createElement('canvas');
+  leinwand.width = G;
+  leinwand.height = G;
+  const ctx = leinwand.getContext('2d');
+
+  ctx.fillStyle = '#2f8a3a'; // dunkleres Grün im Hintergrund = Schatten zwischen den Zweigen
+  ctx.fillRect(0, 0, G, G);
+  ctx.lineCap = 'round';
+
+  // Von dunkel (unten am Zweig) bis hell (oben, wo die Sonne hinkommt) – passend zum Inselgras
+  const gruentoene = ['#2e7d32', '#3a9a43', '#47b04f', '#5cc95a', '#7ed957', '#a5e88f'];
+  const reihen = 4;
+
+  for (let r = 0; r < reihen; r++) {
+    const zweigY = (r + 0.15) * (G / reihen); // wo der Zweig in dieser Reihe sitzt
+    for (let i = 0; i < 260; i++) {
+      // Startpunkt der Nadel: irgendwo am Zweig, etwas darunter verteilt
+      const x = Math.random() * G;
+      const tiefe = Math.random();                 // 0 = oben am Zweig, 1 = unten
+      const y = zweigY + tiefe * (G / reihen) * 0.85;
+      // Nadeln hängen schräg nach unten – mal nach links, mal nach rechts
+      const seite = Math.random() < 0.5 ? -1 : 1;
+      const winkel = (0.5 + Math.random() * 0.6) * seite; // ca. 30°–60° aus der Senkrechten
+      const laenge = 9 + Math.random() * 10;
+      const dx = Math.sin(winkel) * laenge;
+      const dy = Math.cos(winkel) * laenge;
+      // Oben am Zweig heller (Licht), unten dunkler
+      const stufe = Math.min(gruentoene.length - 1, Math.floor((1 - tiefe) * gruentoene.length + Math.random() * 1.5));
+      ctx.strokeStyle = gruentoene[stufe];
+      ctx.lineWidth = 2 + Math.random();
+
+      // Nahtlos: dieselbe Nadel auch um eine Leinwand-Breite/-Höhe verschoben malen
+      for (const vx of [-G, 0, G]) {
+        for (const vy of [-G, 0, G]) {
+          ctx.beginPath();
+          ctx.moveTo(x + vx, y + vy);
+          ctx.lineTo(x + vx + dx, y + vy + dy);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+  return leinwand;
+}
+
+// Macht aus einem Bild (Leinwand oder geladene Datei) eine Textur, die sich wiederholt.
+function alsNadelTextur(textur) {
+  textur.colorSpace = THREE.SRGBColorSpace;
+  textur.wrapS = THREE.RepeatWrapping; // rundherum wiederholen …
+  textur.wrapT = THREE.RepeatWrapping; // … und von unten nach oben
+  textur.repeat.set(4, 3);             // 4x um die Krone herum, 3x nach oben
+  textur.anisotropy = 4;               // bleibt auch schräg von der Seite scharf
+  return textur;
+}
+
+// Alle Bäume teilen sich zwei Kronen-Materialien. Die Farbe färbt die Textur nur leicht ein:
+// untere Krone etwas kräftiger, obere etwas heller.
+const nadelTextur = alsNadelTextur(new THREE.CanvasTexture(maleNadelTextur()));
+const kroneUnten = new THREE.MeshStandardMaterial({ map: nadelTextur, color: '#e8ffe8', flatShading: true, roughness: 0.9 });
+const kroneOben = new THREE.MeshStandardMaterial({ map: nadelTextur, color: '#ffffff', flatShading: true, roughness: 0.9 });
+
+// Ersatz-Textur: Liegt eine eigene Datei unter public/textures/nadeln.png, wird sie
+// statt der gemalten Nadeln benutzt (z. B. selbst in Paint gemalt).
+// Fehlt sie, bleibt einfach die gemalte Textur.
+export function ladeNadelTextur(url) {
+  new THREE.TextureLoader().load(
+    url,
+    (textur) => {
+      alsNadelTextur(textur);
+      kroneUnten.map = textur;
+      kroneOben.map = textur;
+      kroneUnten.needsUpdate = true;
+      kroneOben.needsUpdate = true;
+      nadelTextur.dispose(); // die gemalte Textur wird nicht mehr gebraucht
+    },
+    undefined,
+    () => console.info('Keine eigene Nadel-Textur in public/textures/nadeln.png – nutze die gemalte.'),
+  );
+}
+
 // Eine Kiste. Gibt die Kollisionsbox zurück.
 function erstelleKiste(scene, x, z, groesse, farbe) {
   const kiste = new THREE.Mesh(new THREE.BoxGeometry(groesse, groesse, groesse), lowPoly(farbe));
@@ -97,11 +187,12 @@ function erstelleBaum(scene, x, z, hoehe) {
   stamm.position.y = hoehe * 0.2;
   baum.add(stamm);
 
-  const krone1 = new THREE.Mesh(new THREE.ConeGeometry(hoehe * 0.35, hoehe * 0.5, 7), lowPoly('#3fae49'));
+  // Kronen mit Nadel-Textur (siehe oben)
+  const krone1 = new THREE.Mesh(new THREE.ConeGeometry(hoehe * 0.35, hoehe * 0.5, 7), kroneUnten);
   krone1.position.y = hoehe * 0.55;
   baum.add(krone1);
 
-  const krone2 = new THREE.Mesh(new THREE.ConeGeometry(hoehe * 0.27, hoehe * 0.4, 7), lowPoly('#5cc95a'));
+  const krone2 = new THREE.Mesh(new THREE.ConeGeometry(hoehe * 0.27, hoehe * 0.4, 7), kroneOben);
   krone2.position.y = hoehe * 0.8;
   baum.add(krone2);
 

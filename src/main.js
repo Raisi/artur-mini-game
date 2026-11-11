@@ -1,6 +1,6 @@
 // main.js – der Startpunkt: Renderer, Kamera, Tastatur, Drag & Drop und die Spielschleife.
 import * as THREE from 'three';
-import { erstelleWelt } from './world.js';
+import { erstelleWelt, ladeNadelTextur } from './world.js';
 import { Spieler } from './player.js';
 import { Spiel } from './game.js';
 import { ladeGegnerVorlage, erstelleGegnerPlatzhalter } from './enemy.js';
@@ -61,6 +61,9 @@ ladeGegnerVorlage(`${import.meta.env.BASE_URL}models/enemy.glb`)
     return erstelleGegnerPlatzhalter();
   })
   .then((vorlage) => spiel.setzeGegnerModell(vorlage));
+
+// Eigene Nadel-Textur für die Bäume? (Fehlt sie, bleiben die gemalten Nadeln.)
+ladeNadelTextur(`${import.meta.env.BASE_URL}textures/nadeln.png`);
 
 // Schwert laden – klappt das nicht, gibt es ein einfaches Ersatz-Schwert.
 ladeSchwertVorlage(`${import.meta.env.BASE_URL}models/sword.glb`)
