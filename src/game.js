@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { Gegner, GEGNER_RADIUS } from './enemy.js';
 import { SPIELER_RADIUS } from './player.js';
+import { muenzForm, muenzMaterialien } from './coin.js';
 
 const ANZAHL_MUENZEN = 20;
 const EINSAMMEL_ABSTAND = 1.1; // so nah muss die Figur an eine Münze heran
@@ -89,12 +90,9 @@ export class Spiel {
     this.welt = welt;
     this.sound = new Sound();
 
-    // Alle Münzen teilen sich Form und Material (spart Speicher)
-    this.muenzForm = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 16);
-    this.muenzForm.rotateX(Math.PI / 2); // aufstellen wie ein Rad
-    this.muenzMaterial = new THREE.MeshStandardMaterial({
-      color: '#ffd23f', emissive: '#b07800', metalness: 0.1, roughness: 0.35, flatShading: true,
-    });
+    // Alle Münzen teilen sich Form und Materialien (spart Speicher) – Aussehen siehe coin.js
+    this.muenzForm = muenzForm;
+    this.muenzMaterial = muenzMaterialien;
     this.muenzen = [];
 
     // HUD-Elemente aus index.html

@@ -166,6 +166,32 @@ neben ihr). Gibt es keine `sword.glb`, bekommt sie ein einfaches Ersatz-Schwert.
 Länge, Griff-Position und Haltung stellst du in `src/sword.js` im Block `SCHWERT_EINSTELLUNGEN` ein.
 Hast du das Schwert andersherum gebaut (Klinge unten), setze dort `umdrehen: true`.
 
+## Münzen
+
+Die Münzen sind goldene Scheiben mit erhabenem Rand, einer feinen Rille, einem Glanzstreifen und
+einem geprägten **Stern** in der Mitte; der Münzrand hat feine Rillen. Alles wird beim Start im
+Code gemalt (`src/coin.js`). Ein anderes Symbol statt des Sterns? Dann in `src/coin.js` die
+Funktion `stern` durch einen eigenen Pfad ersetzen.
+
+**Eigene Münze:** Male ein quadratisches Bild (z. B. 256 × 256 Pixel) mit der Münze als Kreis,
+der das Bild ganz ausfüllt, und speichere es als PNG hier:
+
+```
+public/textures/muenze.png
+```
+
+Beim nächsten Neuladen tragen beide Seiten aller Münzen dein Bild; der geriffelte Rand bleibt.
+
+## Felsen
+
+Auch die Felsen haben eine gemalte Textur (`maleSteinTextur` in `src/world.js`): graue Körnung,
+ein paar dunkle Risse und kleine Moos-Tupfen. Eine eigene Stein-Textur legst du hier ab – sie
+wiederholt sich, darum sollten alle vier Ränder zusammenpassen:
+
+```
+public/textures/fels.png
+```
+
 ## Veröffentlichen (GitHub Pages)
 
 Das Spiel wird automatisch veröffentlicht: Sobald Änderungen auf den Branch `main` gepusht
@@ -194,5 +220,6 @@ committen und pushen – fertig.
 | `src/sword.js`   | Das Schwert: laden und griffbereit machen                 |
 | `src/enemy.js`   | Die Gegner: herumbummeln, verfolgen, getroffen werden, wiederkommen |
 | `src/game.js`    | Spielregeln: Münzen, Leben, Treffer, Schwert-Treffer, Timer, Sound, Neustart |
+| `src/coin.js`    | Aussehen der Münzen: Form, gemalte Gold-Textur, eigene Münz-Textur |
 
 Gebaut mit [Vite](https://vite.dev) und [Three.js](https://threejs.org).
