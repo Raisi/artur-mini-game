@@ -6,6 +6,7 @@ import { Spiel } from './game.js';
 import { ladeGegnerVorlage, erstelleGegnerPlatzhalter } from './enemy.js';
 import { ladeSchwertVorlage, erstelleSchwertPlatzhalter } from './sword.js';
 import { Titelbild } from './title.js';
+import { ladeMuenzTextur } from './coin.js';
 
 // ── Renderer: zeichnet die 3D-Szene in ein <canvas> ──
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -72,6 +73,9 @@ ladeSchwertVorlage(`${import.meta.env.BASE_URL}models/sword.glb`)
     return erstelleSchwertPlatzhalter();
   })
   .then((vorlage) => spieler.setzeSchwert(vorlage));
+
+// Eigene Münz-Textur? (Fehlt sie, bleibt die gemalte Gold-Münze.)
+ladeMuenzTextur(`${import.meta.env.BASE_URL}textures/muenze.png`);
 
 // ── Tastatur ──
 // Wir merken uns, welche Tasten gerade gedrückt sind.
