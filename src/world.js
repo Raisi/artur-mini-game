@@ -207,9 +207,126 @@ function erstelleBaum(scene, x, z, hoehe) {
   );
 }
 
-// Ein Felsen (unregelmäßiger Vielflächner).
+// ───────────────────────────────────────────────────────────────
+// Stein-Textur für die Felsen
+// ───────────────────────────────────────────────────────────────
+
+// Malt Stein: graue Flecken in vielen Helligkeiten (wie Körner im Gestein),
+// ein paar dunkle Risse und kleine Moos-Tupfen. Alles, was über den Rand ragt, wird auf
+// der anderen Seite wieder hineingemalt – so ist die Textur nahtlos und man sieht keine Kante.
+function maleSteinTextur() {
+  const G = 256;
+  const leinwand = document.createElement('canvas');
+  leinwand.width = G;
+  leinwand.height = G;
+  const ctx = leinwand.getContext('2d');
+
+  // Malt eine Form 9-mal: einmal normal und 8-mal um eine Bildbreite/-höhe verschoben
+  const nahtlos = (malen) => {
+    for (const vx of [-G, 0, G]) {
+      for (const vy of [-G, 0, G]) {
+        ctx.save();
+        ctx.translate(vx, vy);
+        malen();
+        ctx.restore();
+      }
+    }
+  };
+
+  ctx.fillStyle = '#9aa3ad'; // Grundfarbe wie bisher
+  ctx.fillRect(0, 0, G, G);
+
+  // 1. Körnung: viele halbdurchsichtige Flecken, mal heller, mal dunkler
+  const grautoene = ['#7d8691', '#8b949e', '#a9b1ba', '#b8c0c8', '#6f7782'];
+  for (let i = 0; i < 380; i++) {
+    const x = Math.random() * G;
+    const y = Math.random() * G;
+    const r = 2 + Math.random() * 9;
+    const farbe = grautoene[Math.floor(Math.random() * grautoene.length)];
+    const deckkraft = 0.35 + Math.random() * 0.35; // vorher auswürfeln: alle 9 Kopien gleich
+    nahtlos(() => {
+      ctx.globalAlpha = deckkraft;
+      ctx.fillStyle = farbe;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+  ctx.globalAlpha = 1;
+
+  // 2. Risse: dunkle Zickzack-Linien
+  for (let i = 0; i < 6; i++) {
+    let x = Math.random() * G;
+    let y = Math.random() * G;
+    const punkte = [[x, y]];
+    let richtung = Math.random() * Math.PI * 2;
+    for (let s = 0; s < 6; s++) {
+      richtung += (Math.random() - 0.5) * 1.2; // mal etwas nach links, mal nach rechts
+      x += Math.cos(richtung) * 12;
+      y += Math.sin(richtung) * 12;
+      punkte.push([x, y]);
+    }
+    nahtlos(() => {
+      ctx.strokeStyle = 'rgba(60, 66, 74, 0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      punkte.forEach(([px, py], n) => (n === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));
+      ctx.stroke();
+    });
+  }
+
+  // 3. Ein bisschen Moos: kleine grüne Tupfen in Gruppen
+  for (let gruppe = 0; gruppe < 5; gruppe++) {
+    const gx = Math.random() * G;
+    const gy = Math.random() * G;
+    for (let i = 0; i < 14; i++) {
+      const x = gx + (Math.random() - 0.5) * 30;
+      const y = gy + (Math.random() - 0.5) * 30;
+      const r = 1.5 + Math.random() * 3;
+      const farbe = Math.random() < 0.5 ? '#5f9e3a' : '#7ab648';
+      nahtlos(() => {
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = farbe;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+  }
+  ctx.globalAlpha = 1;
+  return leinwand;
+}
+
+function alsSteinTextur(textur) {
+  textur.colorSpace = THREE.SRGBColorSpace;
+  textur.wrapS = THREE.RepeatWrapping;
+  textur.wrapT = THREE.RepeatWrapping;
+  textur.repeat.set(2, 1); // 2x rundherum, 1x von oben nach unten
+  textur.anisotropy = 4;
+  return textur;
+}
+
+// Alle Felsen teilen sich ein Material
+const steinTextur = alsSteinTextur(new THREE.CanvasTexture(maleSteinTextur()));
+const steinMaterial = new THREE.MeshStandardMaterial({ map: steinTextur, flatShading: true, roughness: 0.95 });
+
+// Ersatz-Textur: public/textures/fels.png (z. B. selbst gemalt) ersetzt die gemalte.
+function ladeSteinTextur(url) {
+  new THREE.TextureLoader().load(
+    url,
+    (textur) => {
+      steinMaterial.map = alsSteinTextur(textur);
+      steinMaterial.needsUpdate = true;
+      steinTextur.dispose();
+    },
+    undefined,
+    () => console.info('Keine eigene Stein-Textur in public/textures/fels.png – nutze die gemalte.'),
+  );
+}
+
+// Ein Felsen (unregelmäßiger Vielflächner) mit Stein-Textur.
 function erstelleFels(scene, x, z, groesse) {
-  const fels = new THREE.Mesh(new THREE.DodecahedronGeometry(groesse, 0), lowPoly('#9aa3ad'));
+  const fels = new THREE.Mesh(new THREE.DodecahedronGeometry(groesse, 0), steinMaterial);
   fels.position.set(x, groesse * 0.6, z);
   fels.scale.y = 0.7;
   fels.castShadow = true;
@@ -223,6 +340,7 @@ export function erstelleWelt(scene) {
   erstelleHimmel(scene);
   erstelleLicht(scene);
   erstelleInsel(scene);
+  ladeSteinTextur(`${import.meta.env.BASE_URL}textures/fels.png`); // eigene Stein-Textur?
 
   // Jedes Hindernis liefert eine Box3 für die Kollision.
   const hindernisse = [
